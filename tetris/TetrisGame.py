@@ -191,20 +191,103 @@ def display(board):
     print("   -----------------------")
 
 
+class BoardRenderer(object):
+
+    def __init__(self, unit_res=30, grid_line_width=1, occupied_px=(0,0,255), grid_line_px=(0,0,0)):
+        self.unit_res = unit_res
+        self.grid_line_px = grid_line_px
+        self.occupied_px = occupied_px
+        self.grid_line_width = grid_line_width
+
+    def display_board(self, board_obj):
+        unit_res = self.unit_res
+        grid_line_width = self.grid_line_width 
+        grid_line_px = self.grid_line_px
+        occupied_px = self.occupied_px
+
+        n = board_obj.n
+
+        img_width = unit_res*n+n-grid_line_width 
+        img_height = unit_res*n+n-grid_line_width  
+        board_img = np.ones((img_height,img_width,3), dtype=np.uint8)
+        board_img *= 255 # all to white
+
+        # first, generate grid lines
+        idx_x = 0
+        idx_y = 0
+        for x in xrange(n-1):
+            idx_x += unit_res + grid_line_width
+            board_img[:,idx_x-1] = grid_line_px
+        for y in xrange(n-1):
+            idx_y += unit_res + grid_line_width
+            board_img[idx_y-1,:] = grid_line_px
+
+        mr,mc = np.where(board_obj.pieces==1)
+        for x,y in zip(mc,mr):
+            self.fill_board_img_square(board_img, (x,y), occupied_px)
+        return board_img
+
+    def fill_board_img_square(self, board_img, square, fill_px):
+        assert(type(board_img) == np.ndarray)
+        assert(type(square) == tuple and type(fill_px) == tuple)
+        
+        r = self.unit_res
+        gl_width = self.grid_line_width
+
+        x,y = square
+        start_x = x * r + gl_width * x
+        start_y = y * r + gl_width * y
+        board_img[start_y:start_y+r,start_x:start_x+r] = fill_px
+
+    def fill_board_squares(self, board_obj, square_list, fill_px):
+        board_img = self.display_board(board_obj)
+        if type(square_list) != list:
+            square_list = [square_list]
+        for sq in square_list:
+            self.fill_board_img_square(board_img, sq, fill_px)
+        return board_img
+
 if __name__ == '__main__':
     # CREATE VIEWER OF VALID MOVES AND NEXT STATE
+    import cv2
+    RED = (0,0,255)
+    BLACK = (0,0,0)
+
     n = 6
     g = TetrisGame(n)
     b = Board(n)
+    b_renderer = BoardRenderer(unit_res=30)
 
     rand_box_list = g.generateRandomBoxList()
     total_actions = g.getActionSize()
 
+    print("Rand Box LIST:", rand_box_list)
+
     for box_size in rand_box_list:
-        print(box_size)
-        valid_moves = g.getValidMoves(b.pieces, [box_size])
+        print()
+        valid_actions = g.getValidMoves(b.pieces, [box_size])
+        if valid_actions[-1] == 1:
+            print("NO VALID ACTIONS FOR:", box_size)
+            continue
         # pick random valid move
-        valid_move_idx = np.where(valid_moves==1)[0]
-        rand_move = random.choice(valid_move_idx)
-        b.pieces = g.getNextState(b.pieces, rand_move)
-        break
+        valid_action_idx = np.where(valid_actions==1)[0]
+        rand_action = random.choice(valid_action_idx)
+        valid_action_squares = [g.boardIndexToSquare(g.action_list[action][0]) for action in valid_action_idx] 
+        rand_action_square = g.boardIndexToSquare(g.action_list[rand_action][0])
+
+        print("For box size:", box_size, "Valid squares:", valid_action_squares)
+        print("Picking square:", rand_action_square)
+
+        rand_action_x, rand_action_y = rand_action_square
+        box_w, box_h = box_size
+        proposed_board_img = b_renderer.fill_board_squares(b, [(rand_action_x+w,rand_action_y+h) for w in xrange(box_w) for h in xrange(box_h)], (0,255,0))
+        cv2.imshow('proposed_board', proposed_board_img)
+
+        b.pieces = g.getNextState(b.pieces, rand_action)
+
+        board_img = b_renderer.display_board(b)
+        cv2.imshow('board', board_img)
+
+        print("Occupied cells: %d of %d, Score: %.3f"%(b.count_occupied(), b.total_cnt, b.get_score()))
+        cv2.waitKey(0)
+

@@ -55,7 +55,7 @@ class Board():
         return occ_score
 
     def count_occupied(self):
-        return np.sum(self.pieces)  # since occupied are 1, non-occ are 0
+        return int(np.sum(self.pieces))  # since occupied are 1, non-occ are 0
 
     # add [][] indexer syntax to the Board
     def __getitem__(self, index): 
