@@ -1,6 +1,6 @@
 from CoachTetris import Coach
-from tetrus.TetrisGame import TetrisGame as Game
-from tetrus.pytorch.NNet import NNetWrapper as nn
+from tetris.TetrisGame import TetrisGame as Game
+from tetris.pytorch.NNet import NNetWrapper as nn
 from utils import *
 
 args = dotdict({
