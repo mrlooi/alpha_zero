@@ -40,27 +40,24 @@ class Coach():
         """
         trainExamples = []
         board = self.game.getInitBoard()
-        box_list = self.game.getInitBoxList()
-        game_box_list = 
 
-        self.curPlayer = 1
         episodeStep = 0
 
         while True:
             episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board)
+            # canonicalBoard = self.game.getCanonicalForm(board)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            sym = self.game.getSymmetries(canonicalBoard, pi)
+            pi = self.mcts.getActionProb(board, temp=temp)
+            sym = self.game.getSymmetries(board, pi)
             for b,p in sym:
                 trainExamples.append([b, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            # TODO: BOX SIZE
-            board = self.game.getNextState(board, BOX_SIZE, action)
-            # TODO: REMAINING BOX LIST
-            r = self.game.getGameEnded(board, REM_BOX_LIST)
+            
+            board = self.game.getNextState(board, action)
+            
+            r = self.game.getGameEnded(board)
 
             if r!=0:
                 return [(x[0],x[1],r) for x in trainExamples]

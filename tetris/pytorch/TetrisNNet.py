@@ -17,7 +17,7 @@ class TetrisNNet(nn.Module):
         self.action_size = game.getActionSize()  # TODO
         self.args = args
 
-        super(OthelloNNet, self).__init__()
+        super(TetrisNNet, self).__init__()
         self.conv1 = nn.Conv2d(1, args.num_channels, 3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(args.num_channels, args.num_channels, 3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(args.num_channels, args.num_channels, 3, stride=1)

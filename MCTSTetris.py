@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import copy
 EPS = 1e-8
 
 class MCTS():
@@ -64,7 +65,8 @@ class MCTS():
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-
+        canonicalBoard = copy.deepcopy(canonicalBoard)
+        
         s = self.game.stringRepresentation(canonicalBoard)
 
         if s not in self.Es:
@@ -75,8 +77,8 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
-            valids = self.game.getValidMoves(canonicalBoard, BOX_SIZE)
+            self.Ps[s], v = self.nnet.predict(canonicalBoard.pieces)
+            valids = self.game.getValidMoves(canonicalBoard)
             self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:

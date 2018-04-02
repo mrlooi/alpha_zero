@@ -4,3 +4,6 @@
 /temp/
 /.project
 /.pydevproject
+
+temp
+pretrained_models/
