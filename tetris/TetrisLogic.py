@@ -33,7 +33,7 @@ class Board():
         self.reset()
 
     def reset(self):
-        self.pieces = np.zeros((self.n + self.m,self.n))
+        self.pieces = np.zeros((self.n + self.m,self.n), dtype=np.int8)
         box_list = self.generate_boxes(min_width=1, max_width=int(self.n/2) + 1, min_height=1, max_height=int(self.n/3))
         self._fill_pieces_with_box_list(box_list)
         self.box_list_cells = self.calculate_box_list_area()
@@ -63,7 +63,25 @@ class Board():
             h = random.randint(min_height, max_height)
             acc_cells += w * h
             boxes.append((w,h))
-        return boxes
+
+        # then sort, smallest to biggest
+        boxes = sorted(boxes, key=lambda bx: bx[0] * bx[1])
+        # then sort same area boxes, from biggest width to smallest
+        idx = 0
+        total = len(boxes)
+        sorted_boxes = []
+        while idx < total:
+            box1 = boxes[idx]
+            cur_area = box1[0] * box1[1]
+            same_area_boxes = [box1]
+            for ix in xrange(idx + 1, total):
+                box2 = boxes[ix]
+                if box2[0] * box2[1] != cur_area:
+                    break
+                same_area_boxes.append(box2)
+            sorted_boxes.extend(sorted(same_area_boxes, key=lambda bx: bx[0]))
+            idx += len(same_area_boxes)
+        return sorted_boxes
 
     def is_full(self):
         return np.all(self.pieces[:self.n]==1)
@@ -201,7 +219,9 @@ class Board():
         x,y = sq
         w,h = box_size
         self.pieces[y:y+h,x:x+w] = 1
-        self.pieces[self.n+box_idx] = 0 # moved
+        # self.pieces[self.n+box_idx] = 0 
+        self.pieces[self.n+box_idx:-1] = self.pieces[self.n+box_idx+1:]
+        self.pieces[-1] = 0  # move up
 
     def boardIndexToSquare(self, idx):
         x = int(idx%self.n)

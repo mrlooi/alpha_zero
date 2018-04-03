@@ -66,7 +66,7 @@ class MCTS():
             v: the negative of the value of the current canonicalBoard
         """
         canonicalBoard = copy.deepcopy(canonicalBoard)
-        
+
         s = self.game.stringRepresentation(canonicalBoard)
 
         if s not in self.Es:
@@ -114,9 +114,11 @@ class MCTS():
 
         a = best_act
         next_s = self.game.getNextState(canonicalBoard, a)
+        print(next_s.pieces)
         # next_s = self.game.getCanonicalForm(next_s)
 
         v = self.search(next_s)
+        print(v)
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)

@@ -10,7 +10,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
 from torch.autograd import Variable
 
 sys.path.append('../../')
@@ -19,22 +18,17 @@ from utils import *
 from pytorch_classification.utils import Bar, AverageMeter
 from NeuralNet import NeuralNet
 
-from .TetrisNNet import TetrisNNet as onnet
+from .TetrisNNet import TetrisNNet as NNet
 
-args = dotdict({
-    'lr': 0.001,
-    'dropout': 0.3,
-    'epochs': 10,
-    'batch_size': 64,
-    'cuda': torch.cuda.is_available(),
-    'num_channels': 512,
-})
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game):
-        self.nnet = onnet(game, args)
-        self.board_x, self.board_y = game.getBoardSize()
-        self.action_size = game.getActionSize()
+    def __init__(self, game, args):
+        self.args = args
+        self.nnet = NNet(game, args)
+        
+        self.board_x = self.nnet.board_x
+        self.board_y = self.nnet.board_y
+        self.action_size = self.nnet.action_size
 
         if args.cuda:
             self.nnet.cuda()
@@ -43,6 +37,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
+        args = self.args
         optimizer = optim.Adam(self.nnet.parameters())
 
         for epoch in range(args.epochs):
@@ -116,7 +111,8 @@ class NNetWrapper(NeuralNet):
 
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        if args.cuda: board = board.contiguous().cuda()
+        if self.args.cuda: 
+            board = board.contiguous().cuda()
         board = Variable(board, volatile=True)
         board = board.view(1, self.board_x, self.board_y)
 

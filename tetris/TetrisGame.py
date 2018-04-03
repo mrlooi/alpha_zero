@@ -1,14 +1,14 @@
 from __future__ import print_function
 import sys
 sys.path.append('..')
-from Game import Game
-# from .TetrisLogic import Board
+# from Game import Game
+# from .TetrisLogic import Board, BoardRenderer
 from TetrisLogic import Board, BoardRenderer
 import numpy as np
 import random
 
 
-class TetrisGame(Game):
+class TetrisGame(object):
     def __init__(self, n, m):
         self.n = n
         self.m = m
@@ -29,7 +29,7 @@ class TetrisGame(Game):
 
     def getBoardSize(self):
         # (a,b) tuple
-        return self.board.total_cells
+        return (self.board.cols, self.board.rows)
 
     def getActionSize(self):
         # return number of actions
@@ -38,7 +38,7 @@ class TetrisGame(Game):
         # board_sz = np.size(getInitBoard())
         # return board_sz * box_list_cnt + 1
         
-        return self.board.total_actions + 1
+        return self.board.total_actions + 1  # + 1 for end game action
 
     def boardIndexToSquare(self, idx):
         return self.board.boardIndexToSquare(idx)
@@ -103,8 +103,11 @@ class TetrisGame(Game):
         return l
 
     def flip_pi_LR(self, board_obj, pi):
-        
-        newPi_m = np.reshape(pi.copy()[:-1], (self.m, self.n, self.n))
+        m = board_obj.m
+        n = board_obj.n
+        total_actions = board_obj.total_actions
+        assert len(pi) >= total_actions == m * n * n
+        newPi_m = np.reshape(pi.copy()[:total_actions], (m, n, n))
 
         for box_ix, mask in enumerate(newPi_m):
             # newPi = np.array([np.fliplr(pi_) for pi_ in newPi])  # CHECK IT!
@@ -185,3 +188,18 @@ if __name__ == '__main__':
         print("Occupied cells: %d of available %d, Score: %.3f"%(b.get_occupied_count(), min(b.box_list_cells, n * n), b.get_score()))
         cv2.waitKey(0)
 
+    # b = Board(n, m)
+    # legal_moves = sorted(b.get_legal_moves_all())
+    # valid_actions = np.zeros(b.total_actions)
+    # valid_actions[legal_moves] = 1
+    # valid_actions_flipped = g.flip_pi_LR(b, valid_actions)
+    # valid_actions_flipped_idx = np.where(valid_actions_flipped==1)[0]
+
+    # for action in valid_actions_flipped_idx:
+    #     sq, box_sz, _ = b.get_square_and_box_size_from_action(action)
+
+    #     box_w, box_h = box_sz
+
+    #     board_img = b_renderer.fill_board_squares(b, [(sq[0]+w,sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], (0,255,0))
+    #     cv2.imshow('nboard', board_img)
+    #     cv2.waitKey(0)        

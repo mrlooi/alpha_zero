@@ -1,20 +1,19 @@
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+# import torch.optim as optim
+from torch.autograd import Variable
+
 import sys
 sys.path.append('..')
 from utils import *
 
-import argparse
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torchvision import datasets, transforms
-from torch.autograd import Variable
-
 class TetrisNNet(nn.Module):
     def __init__(self, game, args):
         # game params
-        self.board_x, self.board_y = game.getBoardSize()  # TODO
-        self.action_size = game.getActionSize()  # TODO
+        self.board_x, self.board_y = game.getBoardSize() 
+        self.action_size = game.getActionSize()  
         self.args = args
 
         super(TetrisNNet, self).__init__()

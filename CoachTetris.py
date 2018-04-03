@@ -1,11 +1,13 @@
-from collections import deque
-from Arena import Arena
-from MCTSTetris import MCTS
 import numpy as np
-from pytorch_classification.utils import Bar, AverageMeter
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
+from collections import deque
+
+from pytorch_classification.utils import Bar, AverageMeter
+
+from Arena import Arena
+from MCTSTetris import MCTS
 
 
 class Coach():
@@ -15,10 +17,12 @@ class Coach():
     """
     def __init__(self, game, nnet, args):
         self.game = game
-        self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
+        
+        self.nnet = nnet
+        self.pnet = self.nnet.__class__(self.game, self.args.train)  # the competitor network
         self.mcts = MCTS(self.game, self.nnet, self.args)
+        
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
