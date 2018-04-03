@@ -1,16 +1,27 @@
 import numpy as np
+import random
 
+# class RandomPlayer():
+#     def __init__(self, game):
+#         self.game = game
+
+#     def play(self, board):
+#         a = np.random.randint(self.game.getActionSize())
+#         valids = self.game.getValidMoves(board)
+#         while valids[a]!=1:
+#             a = np.random.randint(self.game.getActionSize())
+#         return a
 
 class RandomPlayer():
     def __init__(self, game):
         self.game = game
 
     def play(self, board):
-        a = np.random.randint(self.game.getActionSize())
-        valids = self.game.getValidMoves(board)
-        while valids[a]!=1:
-            a = np.random.randint(self.game.getActionSize())
-        return a
+        action_sz = self.game.getActionSize()
+        valid_actions = self.game.getValidMoves(board)
+        valid_action_idx = np.where(valid_actions==1)[0]
+        rand_action = random.choice(valid_action_idx)
+        return rand_action
 
 
 class HumanTetrisPlayer():

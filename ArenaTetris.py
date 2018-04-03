@@ -151,17 +151,7 @@ if __name__=="__main__":
 
     from tetris.TetrisLogic import BoardRenderer
     from tetris.TetrisGame import TetrisGame as Game
-
-    class RandomPlayer():
-        def __init__(self, game):
-            self.game = game
-
-        def play(self, board):
-            action_sz = self.game.getActionSize()
-            valid_actions = self.game.getValidMoves(board)
-            valid_action_idx = np.where(valid_actions==1)[0]
-            rand_action = random.choice(valid_action_idx)
-            return rand_action
+    from tetris.TetrisPlayers import RandomPlayer
 
     b_renderer = BoardRenderer(unit_res=30)
     def display_func(board_obj, title="board_img"):
