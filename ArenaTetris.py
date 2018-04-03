@@ -159,25 +159,46 @@ if __name__=="__main__":
         cv2.imshow(title, board_img)
         cv2.waitKey(0)
 
-    n = 8
-    m = 10
-    g = Game(n,m)
+    def random_vs_random(g):
+        player1 = RandomPlayer(g)
+        player2 = RandomPlayer(g)
 
-    player1 = RandomPlayer(g)
-    player2 = RandomPlayer(g)
+        arena = Arena(player1.play, player2.play, g, display=None)#display_func)
+        pwins, nwins, draws = arena.playGames(40, verbose=False)
+        print(pwins, nwins, draws)
 
-    arena = Arena(player1.play, player2.play, g, display=None)#display_func)
-    pwins, nwins, draws = arena.playGames(200, verbose=False)
-    print(pwins, nwins, draws)
+    def nnet_vs_random(g):
+        from tetris.pytorch.NNetWrapper import NNetWrapper as NNet
+        from MCTSTetris import MCTS
 
+        class dotdict(dict):
+            def __getattr__(self, name):
+                return self[name]
+
+        # nnet players vs random
+        nnet_args = dotdict({
+            'lr': 0.001,
+            'dropout': 0.3,
+            'epochs': 10,
+            'batch_size': 64,
+            'cuda': True, #torch.cuda.is_available(),
+            'num_channels': 512,
+        })
+
+        n1 = NNet(g, nnet_args)
+        n1.load_checkpoint('./output/', 'best.pth.tar')
+        args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
+        mcts1 = MCTS(g, n1, args1)
+        n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
+
+        r_player = RandomPlayer(g)
+
+        arena = Arena(n1p, r_player.play, g, display=display_func)
+        print(arena.playGames(20, verbose=True))
 
     n = 6
     m = 10
     g = Game(n,m)
 
-    player1 = RandomPlayer(g)
-    player2 = RandomPlayer(g)
-
-    arena = Arena(player1.play, player2.play, g, display=None)#display_func)
-    pwins, nwins, draws = arena.playGames(200, verbose=False)
-    print(pwins, nwins, draws)
+    # random_vs_random(g)
+    nnet_vs_random(g)

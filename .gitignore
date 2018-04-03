@@ -8,4 +8,6 @@
 temp
 pretrained_models/
 .idea
-output
+output/
+models
+model/

@@ -6,15 +6,18 @@ from tetris.TetrisGame import TetrisGame as Game
 from tetris.pytorch.NNetWrapper import NNetWrapper as nn
 from utils import *
 
-output_folder = './output'
+n = 12
+m = 15
+
+output_folder = './models/%dx%dx%d'%(n,n,m)
 args = dotdict({
     'numIters': 1000,
-    'numEps': 100,
+    'numEps': 200,
     'tempThreshold': 15,
     'updateThreshold': 0.6,
     'maxlenOfQueue': 200000,
-    'numMCTSSims': 25,
-    'arenaCompare': 40,
+    'numMCTSSims': 40,
+    'arenaCompare': 50,
     'cpuct': 1,
 
     'checkpoint': output_folder,
@@ -25,16 +28,14 @@ args = dotdict({
     'train': dotdict({
         'lr': 0.001,
         'dropout': 0.3,
-        'epochs': 10,
+        'epochs': 15,
         'batch_size': 64,
         'cuda': True, #torch.cuda.is_available(),
-        'num_channels': 512,
+        'num_channels': 1024,
     })
 })
 
 def main():
-    n = 6
-    m = 10
     g = Game(n, m)
     nnet = nn(g, args.train)
 
