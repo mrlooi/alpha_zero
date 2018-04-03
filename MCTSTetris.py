@@ -69,10 +69,16 @@ class MCTS():
 
         s = self.game.stringRepresentation(canonicalBoard)
 
+        # if s not in self.Es:
+        #     self.Es[s] = self.game.getGameEnded(canonicalBoard)
+        # if self.Es[s]!=0:
+        #     # terminal node
+        #     return self.Es[s]
+
+        has_ended = self.game.getGameEnded(canonicalBoard)
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard)
-        if self.Es[s]!=0:
-            # terminal node
+            self.Es[s] = self.game.getScore(canonicalBoard)
+        if has_ended: # terminal node
             return self.Es[s]
 
         if s not in self.Ps:
@@ -118,7 +124,6 @@ class MCTS():
         # next_s = self.game.getCanonicalForm(next_s)
 
         v = self.search(next_s)
-        print(v)
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)

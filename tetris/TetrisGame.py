@@ -69,12 +69,9 @@ class TetrisGame(object):
     def getGameEnded(self, board_obj):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
-        b = board_obj
-        if b.is_full():
-            return 1
-        if b.has_legal_moves_all():
-            return 0
-        return b.get_score()
+        if board_obj.has_legal_moves_all():
+            return False
+        return True
 
     def getScore(self, board_obj):
         return board_obj.get_score()
@@ -151,7 +148,7 @@ if __name__ == '__main__':
     cv2.imshow('flipped_board', flipped_board_img)
     cv2.waitKey(0)
 
-    while g.getGameEnded(b) == 0:
+    while not g.getGameEnded(b):
         valid_actions = g.getValidMoves(b)
         if valid_actions[-1] == 1:
             print("NO MORE VALID ACTIONS")
@@ -160,19 +157,17 @@ if __name__ == '__main__':
         valid_action_idx = np.where(valid_actions==1)[0]
         rand_action = random.choice(valid_action_idx)
 
-        sq, box_sz, _ = b.get_square_and_box_size_from_action(rand_action)
-        box_w, box_h = box_sz
-
-        print("Picked random action %d -> box dims: (%d, %d), Square: (%d, %d)"%(rand_action, box_w, box_h, sq[0], sq[1]))
+        # sq, box_sz, _ = b.get_square_and_box_size_from_action(rand_action)
+        # box_w, box_h = box_sz
+        # print("Picked random action %d -> box dims: (%d, %d), Square: (%d, %d)"%(rand_action, box_w, box_h, sq[0], sq[1]))
 
         rand_action_onehot = np.zeros(len(valid_actions))
         rand_action_onehot[rand_action] = 1
         rand_action_onehot_flipped = g.flip_pi_LR(flipped_b, rand_action_onehot)
         rand_action_flipped = np.where(rand_action_onehot_flipped==1)[0][0]
-        f_sq, _, _ = flipped_b.get_square_and_box_size_from_action(rand_action_flipped)
 
-        proposed_board_img = b_renderer.fill_board_squares(b, [(sq[0]+w,sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], (0,255,0))
-        proposed_flipped_board_img = b_renderer.fill_board_squares(flipped_b, [(f_sq[0]+w,f_sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], (0,255,0))
+        proposed_board_img = b_renderer.draw_action(b, rand_action)
+        proposed_flipped_board_img = b_renderer.draw_action(flipped_b, rand_action_flipped)
 
         cv2.imshow('proposed_board', proposed_board_img)
         cv2.imshow('flipped_proposed_board', proposed_flipped_board_img)

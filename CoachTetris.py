@@ -6,7 +6,7 @@ from collections import deque
 
 from pytorch_classification.utils import Bar, AverageMeter
 
-from Arena import Arena
+from ArenaTetris import Arena
 from MCTSTetris import MCTS
 
 
@@ -22,7 +22,7 @@ class Coach():
         self.nnet = nnet
         self.pnet = self.nnet.__class__(self.game, self.args.train)  # the competitor network
         self.mcts = MCTS(self.game, self.nnet, self.args)
-        
+
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
@@ -55,15 +55,16 @@ class Coach():
             pi = self.mcts.getActionProb(board, temp=temp)
             sym = self.game.getSymmetries(board, pi)
             for b,p in sym:
-                trainExamples.append([b, p, None])
+                trainExamples.append([b, p])
 
             action = np.random.choice(len(pi), p=pi)
             
             board = self.game.getNextState(board, action)
             
-            r = self.game.getGameEnded(board)
+            has_ended = self.game.getGameEnded(board)
 
-            if r!=0:
+            if has_ended:
+                r = self.game.getScore(board)
                 return [(x[0],x[1],r) for x in trainExamples]
 
     def learn(self):

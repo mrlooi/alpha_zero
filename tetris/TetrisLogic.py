@@ -88,9 +88,9 @@ class Board():
 
     def get_score(self):
         occ_cnt = self.get_occupied_count()
-        half_cnt = min(self.box_list_cells, self.n * self.n) / 2
-        occ_score = (float(occ_cnt - half_cnt) / half_cnt) ** 2
-        occ_score = -occ_score if occ_cnt < half_cnt else occ_score
+        half_cnt = min(self.box_list_cells, self.n * self.n) / 2.
+        occ_score = (float(occ_cnt - half_cnt) / half_cnt)# ** 2
+        # occ_score = -occ_score if occ_cnt < half_cnt else occ_score
         return occ_score
 
     def get_occupied_count(self):
@@ -349,6 +349,13 @@ class BoardRenderer(object):
             self.fill_board_img_square(board_img, sq, fill_px)
         return board_img
 
+    def draw_action(self, board_obj, action, action_px=(0,255,0)):
+        b = board_obj 
+        sq, box_sz, _ = b.get_square_and_box_size_from_action(action)
+        box_w, box_h = box_sz
+
+        board_img = self.fill_board_squares(b, [(sq[0]+w,sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], action_px)
+        return board_img
 
 if __name__ == '__main__':
 
@@ -379,10 +386,7 @@ if __name__ == '__main__':
     cv2.imshow('board', board_img)
     cv2.waitKey(0)
 
-    for action in b.get_legal_moves_all():
-        sq, box_sz, _ = b.get_square_and_box_size_from_action(action)
-        box_w, box_h = box_sz
-
-        board_img = b_renderer.fill_board_squares(b, [(sq[0]+w,sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], (0,255,0))
+    for action in sorted(b.get_legal_moves_all()):
+        board_img = b_renderer.draw_action(b, action)
         cv2.imshow('board', board_img)
         cv2.waitKey(0)        
