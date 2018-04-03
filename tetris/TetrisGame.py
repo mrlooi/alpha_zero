@@ -25,6 +25,7 @@ class TetrisGame(object):
 
     def getInitBoard(self):
         # return initial board (numpy board)
+        self.board.reset()
         return self.board
 
     def getBoardSize(self):
@@ -92,11 +93,13 @@ class TetrisGame(object):
         board = board_obj.pieces
         for j in [True, False]:
             newB = board.copy() # np.rot90(board, i)
-            newPi = np.reshape(pi[:-1], (self.m, self.n, self.n))
             if j:
                 newB[:self.n] = np.fliplr(newB[:self.n])  # only flip the top part!
                 newPi = self.flip_pi_LR(board_obj, pi)
-            l += [(newB, list(newPi) + [pi[-1]])]
+                newPi = list(newPi) + [pi[-1]]
+            else:
+                newPi = list(pi)
+            l += [(newB, newPi)]
         return l
 
     def flip_pi_LR(self, board_obj, pi):

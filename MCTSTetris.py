@@ -33,7 +33,7 @@ class MCTS():
             self.search(canonicalBoard)
 
         s = self.game.stringRepresentation(canonicalBoard)
-        counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+        counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in xrange(self.game.getActionSize())]
 
         if temp==0:
             bestA = np.argmax(counts)
@@ -42,7 +42,8 @@ class MCTS():
             return probs
 
         counts = [x**(1./temp) for x in counts]
-        probs = [x/float(sum(counts)) for x in counts]
+        count_sum = float(sum(counts))
+        probs = np.array([x/count_sum for x in counts])
         return probs
 
 
@@ -107,7 +108,7 @@ class MCTS():
         best_act = -1
 
         # pick the action with the highest upper confidence bound
-        for a in range(self.game.getActionSize()):
+        for a in xrange(self.game.getActionSize()):
             if valids[a]:
                 if (s,a) in self.Qsa:
                     u = self.Qsa[(s,a)] + self.args.cpuct*self.Ps[s][a]*math.sqrt(self.Ns[s])/(1+self.Nsa[(s,a)])
@@ -120,7 +121,6 @@ class MCTS():
 
         a = best_act
         next_s = self.game.getNextState(canonicalBoard, a)
-        print(next_s.pieces)
         # next_s = self.game.getCanonicalForm(next_s)
 
         v = self.search(next_s)
