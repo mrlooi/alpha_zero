@@ -212,6 +212,12 @@ class Board():
         x, y = square
         return box_idx * self.n * self.n + y * self.n + x
 
+    def is_action_valid(self, action):
+        sq, box_size, box_idx = self.get_square_and_box_size_from_action(action)
+        if sq is None:
+            return False
+        return self.is_valid_placement(sq, box_size)
+
     def execute_move(self, action):
         sq, box_size, box_idx = self.get_square_and_box_size_from_action(action)
         if sq is None:
@@ -352,10 +358,39 @@ class BoardRenderer(object):
     def draw_action(self, board_obj, action, action_px=(0,255,0)):
         b = board_obj 
         sq, box_sz, _ = b.get_square_and_box_size_from_action(action)
-        box_w, box_h = box_sz
+        return self.draw_box_from_square(b, sq, box_sz, action_px)
 
-        board_img = self.fill_board_squares(b, [(sq[0]+w,sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], action_px)
+    def draw_box_from_square(self, board_obj, square, box_size, fill_px=(0,255,0)):
+        box_w, box_h = box_size
+        sq = square
+        board_img = self.fill_board_squares(board_obj, [(sq[0]+w,sq[1]+h) for w in xrange(box_w) for h in xrange(box_h)], fill_px)
         return board_img
+
+    def get_square_from_pixel_pos(self, board_obj, pos):
+        unit_res = self.unit_res
+        grid_line_width = self.grid_line_width
+
+        square_x = None
+        square_y = None
+
+        x,y = pos
+
+        cols = board_obj.cols
+        rows = board_obj.rows
+
+        idx_x = 0
+        idx_y = 0
+        for c in xrange(cols):
+            idx_x += unit_res + grid_line_width
+            if x < idx_x:
+                square_x = c
+                break
+        for r in xrange(rows):
+            idx_y += unit_res + grid_line_width
+            if y < idx_y:
+                square_y = r
+                break
+        return (square_x, square_y)
 
 if __name__ == '__main__':
 
