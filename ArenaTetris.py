@@ -179,14 +179,14 @@ if __name__=="__main__":
         nnet_args = dotdict({
             'lr': 0.001,
             'dropout': 0.3,
-            'epochs': 10,
+            'epochs': 15,
             'batch_size': 64,
             'cuda': True, #torch.cuda.is_available(),
             'num_channels': 512,
         })
 
         n1 = NNet(g, nnet_args)
-        n1.load_checkpoint('./output/', 'best.pth.tar')
+        n1.load_checkpoint('./models/8x8x10', 'best.pth.tar')
         args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
         mcts1 = MCTS(g, n1, args1)
         n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
@@ -196,7 +196,7 @@ if __name__=="__main__":
         arena = Arena(n1p, r_player.play, g, display=display_func)
         print(arena.playGames(20, verbose=True))
 
-    n = 6
+    n = 8
     m = 10
     g = Game(n,m)
 

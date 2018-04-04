@@ -43,7 +43,7 @@ class MCTS():
 
         counts = [x**(1./temp) for x in counts]
         count_sum = float(sum(counts))
-        probs = np.array([x/count_sum for x in counts])
+        probs = np.array([x/count_sum for x in counts], dtype=np.float32)
         return probs
 
 

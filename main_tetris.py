@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import os.path as osp
 
 from CoachTetris import Coach
 from tetris.TetrisGame import TetrisGame as Game
@@ -12,30 +13,36 @@ m = 15
 output_folder = './models/%dx%dx%d'%(n,n,m)
 args = dotdict({
     'numIters': 1000,
-    'numEps': 200,
+    'numEps': 40,
     'tempThreshold': 15,
-    'updateThreshold': 0.6,
-    'maxlenOfQueue': 200000,
-    'numMCTSSims': 40,
-    'arenaCompare': 50,
+    'updateThreshold': 0.6, 
+    'maxlenOfQueue': 20000,
+    'numMCTSSims': 30,
+    'arenaCompare': 35,
     'cpuct': 1,
 
     'checkpoint': output_folder,
     'load_model': False,
-    'load_folder_file': (output_folder,'checkpoint_7.pth.tar'),
-    'numItersForTrainExamplesHistory': 20,
+    'load_folder_file': (output_folder,'checkpoint_4.pth.tar'),
+    'load_examples': False,
+    'examples_file': osp.join(output_folder,'data.example'),
+    # 'numItersForTrainExamplesHistory': 4,
+    # 'maxEpisodesInTrainHistory': 300,
 
     'train': dotdict({
         'lr': 0.001,
         'dropout': 0.3,
-        'epochs': 15,
-        'batch_size': 64,
+        'epochs': 20,
+        'batch_size': 32,
         'cuda': True, #torch.cuda.is_available(),
-        'num_channels': 1024,
+        'num_channels': 512,
     })
 })
 
-def main():
+# def main():
+
+
+if __name__=="__main__":
     g = Game(n, m)
     nnet = nn(g, args.train)
 
@@ -43,24 +50,7 @@ def main():
         nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
 
     c = Coach(g, nnet, args)
-    if args.load_model:
+    if args.load_examples:
         print("Load trainExamples from file")
-        c.loadTrainExamples()
+        c.loadTrainExamples(examplesFile=args.examples_file, skipFirstSelfPlay=False)
     c.learn()
-
-if __name__=="__main__":
-    main()
-
-    # n = 6
-    # m = 10
-    #
-    # g = Game(n, m)
-    # nnet = nn(g, args.train)
-    #
-    # c = Coach(g, nnet, args)
-    # # c.learn()
-    # self = c.mcts
-    # board = c.game.getInitBoard()
-    # # self.getActionProb(board, temp=1)
-    # # # pi = c.mcts.getActionProb(board, temp=1)
-    #

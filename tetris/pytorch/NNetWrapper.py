@@ -49,11 +49,12 @@ class NNetWrapper(NeuralNet):
             v_losses = AverageMeter()
             end = time.time()
 
-            bar = Bar('Training Net', max=int(len(examples)/args.batch_size))
+            total_examples = len(examples)
+            bar = Bar('Training Net', max=int(total_examples / args.batch_size))
             batch_idx = 0
 
-            while batch_idx < int(len(examples)/args.batch_size):
-                sample_ids = np.random.randint(len(examples), size=args.batch_size)
+            while batch_idx < int(total_examples / args.batch_size):
+                sample_ids = np.random.randint(total_examples, size=args.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
@@ -90,7 +91,7 @@ class NNetWrapper(NeuralNet):
                 # plot progress
                 bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss_pi: {lpi:.4f} | Loss_v: {lv:.3f}'.format(
                             batch=batch_idx,
-                            size=int(len(examples)/args.batch_size),
+                            size=int(total_examples/args.batch_size),
                             data=data_time.avg,
                             bt=batch_time.avg,
                             total=bar.elapsed_td,
@@ -143,6 +144,6 @@ class NNetWrapper(NeuralNet):
         # https://github.com/pytorch/examples/blob/master/imagenet/main.py#L98
         filepath = os.path.join(folder, filename)
         if not os.path.exists(filepath):
-            raise("No model in path {}".format(filepath))
+            raise IOError, "No model in path %s"%(filepath)
         checkpoint = torch.load(filepath)
         self.nnet.load_state_dict(checkpoint['state_dict'])
