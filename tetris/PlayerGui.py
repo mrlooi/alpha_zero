@@ -18,14 +18,15 @@ class PlayerGUI(object):
         g = self.game
         assert g.n == board_obj.n and g.m == board_obj.m
         self.board = board_obj
-        self.board_img = self.b_renderer.display_board(b)
+        self.board_img = self.b_renderer.display_board(self.board)
         self.board_img_copy = self.board_img.copy()
 
-    def run(self):
+    def play(self, board):
+        self.setBoard(board)
         b = self.board
 
         if b is None:
-            print("Please set the board object using setBoard(board)")
+            print("Please set the board object")
             return 
 
         cv2.namedWindow(self.name)
@@ -102,5 +103,4 @@ if __name__ == '__main__':
     b_renderer = BoardRenderer(unit_res=30)
 
     p_gui = PlayerGUI("PlayerOne", g, b_renderer)
-    p_gui.setBoard(b)
-    p_gui.run()
+    p_gui.play(b)

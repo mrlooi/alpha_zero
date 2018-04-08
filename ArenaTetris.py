@@ -3,12 +3,13 @@ import copy
 import time
 
 from pytorch_classification.utils import Bar, AverageMeter
+from tetris.PlayerGui import PlayerGUI
 
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
     """
-    def __init__(self, player1, player2, game, display=None):
+    def __init__(self, player1, player2, game, player1_is_human=False, player2_is_human=False, display=None):
         """
         Input:
             player 1,2: two functions that takes board as input, return action
@@ -22,6 +23,8 @@ class Arena():
         """
         self.player1 = player1
         self.player2 = player2
+        self.player1_is_human = player1_is_human
+        self.player2_is_human = player2_is_human
         self.game = game
         self.display = display
 
@@ -37,6 +40,7 @@ class Arena():
         """
         player_scores = [-1,-1]
         players = [self.player1, self.player2]
+        is_human = [self.player1_is_human, self.player2_is_human]
         
         original_board = self.game.getInitBoard()
 
@@ -47,12 +51,16 @@ class Arena():
             it = 0
             while not self.game.getGameEnded(board):
                 it+=1
+
+                p = players[ix]
+                action = p(board) # Action here!
+                if is_human[ix]:
+                    break
+
                 if verbose:
                     print("Player %d, Turn %d"%(ix + 1, it))
                 if self.display:
                     self.display(board)
-
-                action = players[ix](board) # Action here!
 
                 valids = self.game.getValidMoves(board)
 
@@ -61,8 +69,10 @@ class Arena():
                     assert valids[action] > 0
                 board = self.game.getNextState(board, action)
 
-            player_scores[ix] = self.game.getScore(board)
-            assert(player_scores[ix] is not False)
+            score = self.game.getScore(board)
+            assert(score is not False)
+            player_scores[ix] = score
+            print("Finished Game -> Player %d score: %.3f"%(ix, score))
 
             final_boards.append(board)
 
@@ -152,8 +162,12 @@ if __name__=="__main__":
     from tetris.TetrisLogic import BoardRenderer
     from tetris.TetrisGame import TetrisGame as Game
     from tetris.TetrisPlayers import RandomPlayer
+    from tetris.pytorch.NNetWrapper import NNetWrapper as NNet
+    from MCTSTetris import MCTS
+    
 
     b_renderer = BoardRenderer(unit_res=30)
+
     def display_func(board_obj, title="board_img"):
         board_img = b_renderer.display_board(board_obj)
         cv2.imshow(title, board_img)
@@ -167,38 +181,46 @@ if __name__=="__main__":
         pwins, nwins, draws = arena.playGames(40, verbose=False)
         print(pwins, nwins, draws)
 
-    def nnet_vs_random(g):
-        from tetris.pytorch.NNetWrapper import NNetWrapper as NNet
-        from MCTSTetris import MCTS
+    def nnet_vs_random(nnet_mcts, g):
 
-        class dotdict(dict):
-            def __getattr__(self, name):
-                return self[name]
-
-        # nnet players vs random
-        nnet_args = dotdict({
-            'lr': 0.001,
-            'dropout': 0.3,
-            'epochs': 15,
-            'batch_size': 64,
-            'cuda': True, #torch.cuda.is_available(),
-            'num_channels': 512,
-        })
-
-        n1 = NNet(g, nnet_args)
-        n1.load_checkpoint('./models/8x8x10', 'best.pth.tar')
-        args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
-        mcts1 = MCTS(g, n1, args1)
-        n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
+        n1p = lambda x: np.argmax(nnet_mcts.getActionProb(x, temp=0))
 
         r_player = RandomPlayer(g)
 
-        arena = Arena(n1p, r_player.play, g, display=display_func)
+        arena = Arena(n1p, r_player.play, g, display=None) #display_func)
         print(arena.playGames(20, verbose=True))
 
-    n = 8
-    m = 10
+    def nnet_vs_human(nnet_mcts, g):
+
+        n1p = lambda x: np.argmax(nnet_mcts.getActionProb(x, temp=0))
+        player = PlayerGUI("PlayerOne", g, b_renderer)
+
+        arena = Arena(player.play, n1p, g, player1_is_human=True, display=display_func)
+        print(arena.playGames(20, verbose=True))
+
+    n = 12
+    m = 15
     g = Game(n,m)
 
+    class dotdict(dict):
+        def __getattr__(self, name):
+            return self[name]
+
+    # nnet players vs random
+    nnet_args = dotdict({
+        'lr': 0.001,
+        'dropout': 0.3,
+        'epochs': 15,
+        'batch_size': 64,
+        'cuda': True, #torch.cuda.is_available(),
+        'num_channels': 512,
+    })
+
+    n1 = NNet(g, nnet_args)
+    n1.load_checkpoint('./models/12x12x15', 'best.pth.tar')
+    args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
+    mcts1 = MCTS(g, n1, args1)
+
     # random_vs_random(g)
-    nnet_vs_random(g)
+    # nnet_vs_random(mcts1, g)
+    nnet_vs_human(mcts1, g)
