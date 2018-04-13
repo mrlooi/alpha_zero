@@ -3,7 +3,6 @@ import copy
 import time
 
 from pytorch_classification.utils import Bar, AverageMeter
-from tetris.PlayerGui import PlayerGUI
 
 class Arena():
     """
@@ -159,14 +158,34 @@ if __name__=="__main__":
     import cv2
     import random
 
-    from tetris.TetrisLogic import BoardRenderer
-    from tetris.TetrisGame import TetrisGame as Game
     from tetris.TetrisPlayers import RandomPlayer
     from tetris.pytorch.NNetWrapper import NNetWrapper as NNet
     from MCTSTetris import MCTS
     
 
-    b_renderer = BoardRenderer(unit_res=30)
+    USE_V2 = True
+    if USE_V2:
+        from tetris.TetrisLogic2 import BoardRenderer2
+        from tetris.TetrisGame2 import TetrisGame2 as Game2
+        
+        n = 10
+        r = 6
+        c = 6
+        g = Game2(r,c,n)
+        b_renderer = BoardRenderer2(unit_res=30)
+        model_folder = './models/%dx%dx%d_v2'%(r,c,n)
+
+    else:
+        from tetris.TetrisLogic import BoardRenderer
+        from tetris.TetrisGame import TetrisGame as Game
+
+        n = 12
+        m = 15
+        g = Game(n,m)
+        b_renderer = BoardRenderer(unit_res=30)
+
+        model_folder = './models/%dx%dx%d'%(n,n,m)
+
 
     def display_func(board_obj, title="board_img"):
         board_img = b_renderer.display_board(board_obj)
@@ -191,6 +210,11 @@ if __name__=="__main__":
         print(arena.playGames(20, verbose=True))
 
     def nnet_vs_human(nnet_mcts, g):
+        USE_V2 = True
+        if USE_V2:
+            from tetris.PlayerGui2 import PlayerGUI2 as PlayerGUI
+        else:
+            from tetris.PlayerGui import PlayerGUI
 
         n1p = lambda x: np.argmax(nnet_mcts.getActionProb(x, temp=0))
         player = PlayerGUI("PlayerOne", g, b_renderer)
@@ -198,9 +222,9 @@ if __name__=="__main__":
         arena = Arena(player.play, n1p, g, player1_is_human=True, display=display_func)
         print(arena.playGames(20, verbose=True))
 
-    n = 12
-    m = 15
-    g = Game(n,m)
+    # random_vs_random(g)
+    # import sys
+    # sys.exit(0)
 
     class dotdict(dict):
         def __getattr__(self, name):
@@ -217,10 +241,10 @@ if __name__=="__main__":
     })
 
     n1 = NNet(g, nnet_args)
-    n1.load_checkpoint('./models/12x12x15', 'best.pth.tar')
+    n1.load_checkpoint(model_folder, 'best.pth.tar')
     args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
     mcts1 = MCTS(g, n1, args1)
 
     # random_vs_random(g)
-    # nnet_vs_random(mcts1, g)
-    nnet_vs_human(mcts1, g)
+    nnet_vs_random(mcts1, g)
+    # nnet_vs_human(mcts1, g)

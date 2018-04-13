@@ -1,29 +1,39 @@
 import copy
 import numpy as np
 import os.path as osp
+from utils import dotdict
 
-from CoachTetris import Coach
-from tetris.TetrisGame import TetrisGame as Game
-from tetris.pytorch.NNetWrapper import NNetWrapper as nn
-from utils import *
+USE_V2 = True
+if USE_V2:
+    from tetris.TetrisGame2 import TetrisGame2 as Game2
+    
+    n = 15
+    r = 10
+    c = 10
+    g = Game2(r,c,n)
 
-n = 12
-m = 15
+    output_folder = './models/%dx%dx%d_v2'%(r,c,n)
+else:
+    from tetris.TetrisGame import TetrisGame as Game
+    n = 6
+    m = 10
+    g = Game(n, m)
 
-output_folder = './models/%dx%dx%d'%(n,n,m)
+    output_folder = './models/%dx%dx%d'%(n,n,m)
+
 args = dotdict({
-    'numIters': 1000,
-    'numEps': 40,
+    'numIters': 10,
+    'numEps': 80,
     'tempThreshold': 15,
     'updateThreshold': 0.6, 
-    'maxlenOfQueue': 20000,
-    'numMCTSSims': 30,
-    'arenaCompare': 35,
+    'maxlenOfQueue': 6000,
+    'numMCTSSims': 40,
+    'arenaCompare': 30,
     'cpuct': 1,
 
     'checkpoint': output_folder,
     'load_model': False,
-    'load_folder_file': (output_folder,'checkpoint_4.pth.tar'),
+    'load_folder_file': (output_folder,'temp.pth.tar'),
     'load_examples': False,
     'examples_file': osp.join(output_folder,'data.example'),
     # 'numItersForTrainExamplesHistory': 4,
@@ -32,8 +42,8 @@ args = dotdict({
     'train': dotdict({
         'lr': 0.001,
         'dropout': 0.3,
-        'epochs': 20,
-        'batch_size': 32,
+        'epochs': 15,
+        'batch_size': 64,
         'cuda': True, #torch.cuda.is_available(),
         'num_channels': 512,
     })
@@ -43,7 +53,10 @@ args = dotdict({
 
 
 if __name__=="__main__":
-    g = Game(n, m)
+
+    from CoachTetris import Coach
+    from tetris.pytorch.NNetWrapper import NNetWrapper as nn
+
     nnet = nn(g, args.train)
 
     if args.load_model:

@@ -63,8 +63,11 @@ class PlayerGUI(object):
                     self.cur_box = None
                     print("Deselected Box %d"%(box_ix+1))
                 else:
-                    self.cur_box = box_ix
                     box_sz = self.board.get_box_size_from_idx(box_ix)
+                    if box_sz[0] == 0:
+                        print("Please pick a valid box!")
+                        return
+                    self.cur_box = box_ix
                     print("Picked Box %d) W %d H %d"%(box_ix+1, box_sz[0], box_sz[1]))
             else:
                 if self.cur_box is not None:  # has a box, and placing it in grid 
