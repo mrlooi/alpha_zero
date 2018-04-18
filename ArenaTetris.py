@@ -71,7 +71,7 @@ class Arena():
             score = self.game.getScore(board)
             assert(score is not False)
             player_scores[ix] = score
-            print("Finished Game -> Player %d score: %.3f"%(ix, score))
+            print("Finished Game -> Player %d score: %.3f"%(ix + 1, score))
 
             final_boards.append(board)
 
@@ -162,41 +162,57 @@ if __name__=="__main__":
     from tetris.pytorch.NNetWrapper import NNetWrapper as NNet
     from MCTSTetris import MCTS
     
-
-    USE_V2 = True
-    if USE_V2:
-        from tetris.TetrisLogic2 import BoardRenderer2
-        from tetris.TetrisGame2 import TetrisGame2 as Game2
+    USE_VOXEL = True
+    if USE_VOXEL:
+        from voxel.VoxelRender import BoardRenderer
+        from voxel.VoxelGame import VoxelGame
         
         n = 10
-        r = 6
-        c = 6
-        g = Game2(r,c,n)
-        b_renderer = BoardRenderer2(unit_res=30)
-        model_folder = './models/%dx%dx%d_v2'%(r,c,n)
+        x = 9 
+        y = 6
+        z = 5
+        g = VoxelGame(x, y, z, n)
+        b_renderer = BoardRenderer()
+        # model_folder = './models/%dx%dx%d_v2'%(r,c,n)
 
-    else:
-        from tetris.TetrisLogic import BoardRenderer
-        from tetris.TetrisGame import TetrisGame as Game
+        def display_func(board_obj, title="board_img"):
+            b_renderer.display_board(board_obj)
+            b_renderer.show(0.05)
+    else:    
+        USE_V2 = True
+        if USE_V2:
+            from tetris.TetrisLogic2 import BoardRenderer2
+            from tetris.TetrisGame2 import TetrisGame2 as Game2
+            
+            n = 10
+            r = 6
+            c = 6
+            g = Game2(r,c,n)
+            b_renderer = BoardRenderer2(unit_res=30)
+            model_folder = './models/%dx%dx%d_v2'%(r,c,n)
 
-        n = 12
-        m = 15
-        g = Game(n,m)
-        b_renderer = BoardRenderer(unit_res=30)
+        else:
+            from tetris.TetrisLogic import BoardRenderer
+            from tetris.TetrisGame import TetrisGame as Game
 
-        model_folder = './models/%dx%dx%d'%(n,n,m)
+            n = 12
+            m = 15
+            g = Game(n,m)
+            b_renderer = BoardRenderer(unit_res=30)
+
+            model_folder = './models/%dx%dx%d'%(n,n,m)
 
 
-    def display_func(board_obj, title="board_img"):
-        board_img = b_renderer.display_board(board_obj)
-        cv2.imshow(title, board_img)
-        cv2.waitKey(0)
+        def display_func(board_obj, title="board_img"):
+            board_img = b_renderer.display_board(board_obj)
+            cv2.imshow(title, board_img)
+            cv2.waitKey(0)
 
     def random_vs_random(g):
         player1 = RandomPlayer(g)
         player2 = RandomPlayer(g)
 
-        arena = Arena(player1.play, player2.play, g, display=None)#display_func)
+        arena = Arena(player1.play, player2.play, g, display=display_func) # None)
         pwins, nwins, draws = arena.playGames(40, verbose=False)
         print(pwins, nwins, draws)
 
@@ -222,9 +238,11 @@ if __name__=="__main__":
         arena = Arena(player.play, n1p, g, player1_is_human=True, display=display_func)
         print(arena.playGames(20, verbose=True))
 
-    # random_vs_random(g)
-    # import sys
-    # sys.exit(0)
+
+    random_vs_random(g)
+    import sys
+    sys.exit(0)
+
 
     class dotdict(dict):
         def __getattr__(self, name):

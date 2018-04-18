@@ -75,6 +75,8 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        max_examples = self.args.maxlenOfQueue # maxEpisodesInTrainHistory
+        min_examples = self.args.minlenOfQueue # maxEpisodesInTrainHistory
 
         for i in range(1, self.args.numIters+1):
             # bookkeeping
@@ -104,15 +106,19 @@ class Coach():
                 # self.trainExamplesHistory.append(iterationTrainExamples)
             
             total_examples = len(self.trainExamplesHistory)
-            max_examples = self.args.maxlenOfQueue # maxEpisodesInTrainHistory
+
             print("Current data length %d"%(total_examples))
+            if total_examples < min_examples:
+                print("%d samples has not exceeded minimum threshold of %d, skipping training..."%(total_examples, min_examples))
+                continue
             if total_examples > max_examples:
                 print("len(trainExamplesHistory) = %d => keep the latest trainExamples"%(total_examples))
                 # self.trainExamplesHistory.pop(0)
                 self.trainExamplesHistory = self.trainExamplesHistory[-max_examples:]
             # backup history to a file
             # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(self.args.checkpoint, "data.example")
+            if not self.skipFirstSelfPlay or i>1:
+                self.saveTrainExamples(self.args.checkpoint, "data.example")
             
             # shuffle examlpes before training
             # trainExamples = self.trainExamplesHistory
