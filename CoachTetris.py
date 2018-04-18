@@ -155,6 +155,7 @@ class Coach():
                 print('SAVING TO BEST MODEL...')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+            print("Saved to %s"%(os.path.join(self.args.checkpoint, self.getCheckpointFile(i))))
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
