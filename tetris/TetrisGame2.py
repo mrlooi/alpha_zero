@@ -23,7 +23,7 @@ class TetrisGame2(object):
 
     def getBoardSize(self):
         # (a,b) tuple
-        return (self.board.cols, self.board.rows)
+        return (self.board.rows, self.board.cols)
 
     def getActionSize(self):
         # return number of actions
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         cv2.imshow('board', board_img)
         cv2.imshow('flipped_board', flipped_board_img)
 
-        print("Occupied cells: %d of available %d, Score: %.3f"%(b.get_occupied_count(), min(b.box_list_area, n * n), b.get_score()))
+        print("Occupied cells: %d of available %d, Score: %.3f"%(b.get_occupied_count(), min(b.box_list_area, r * c), b.get_score()))
         cv2.waitKey(0)
 
     # b = Board(n, m)
