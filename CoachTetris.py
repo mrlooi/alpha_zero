@@ -132,14 +132,17 @@ class Coach():
                 continue
 
             # training new network, keeping a copy of the old one
-            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+            if not os.path.exists(os.path.join(self.args.checkpoint, 'best.pth.tar')):
+                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+                continue
+            self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+            
             pmcts = MCTS(self.game, self.pnet, self.args)
             
             self.nnet.train(self.trainExamplesHistory)
             nmcts = MCTS(self.game, self.nnet, self.args)
 
-            print('PITTING AGAINST PREVIOUS VERSION')
+            print('PITTING AGAINST BEST VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
@@ -147,11 +150,11 @@ class Coach():
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
             if pwins+nwins > 0 and float(nwins)/(pwins+nwins) < self.args.updateThreshold:
                 print('REJECTING NEW MODEL')
-                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+                # self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             else:
-                print('ACCEPTING NEW MODEL')
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
+                print('SAVING TO BEST MODEL...')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')                
+            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
