@@ -10,7 +10,7 @@ if USE_VOXEL:
     
     n = 20
     x = 9 
-    y = 3
+    y = 4
     z = 6
     g = VoxelGame(x, y, z, n)
     output_folder = './models2/voxel/%dx%dx%d_%d'%(x,y,z,n)
@@ -47,7 +47,7 @@ args = dotdict({
     'minlenOfQueue': 3000,
     'maxlenOfQueue': 8000,
     'numMCTSSims': 30,
-    'arenaCompare': 25,
+    'arenaCompare': 30,
     'cpuct': 1,
 
     'checkpoint': output_folder,
@@ -61,24 +61,47 @@ args = dotdict({
     'train': dotdict({
         'lr': 0.001,
         'dropout': 0.3,
-        'epochs': 20,
+        'epochs': 30,
         'batch_size': 64,
         'cuda': True, #torch.cuda.is_available(),
         'num_channels': 512,
     })
 })
 
+CMD_LIST = ['self', 'opt', 'eval']
+
+def create_parser():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("cmd", help="what to do", choices=CMD_LIST)
+    return parser
 
 if __name__=="__main__":
+    parser = create_parser()
+    p_args = parser.parse_args()
 
-    from CoachTetris import Coach
     nnet = nn(g, args.train)
 
-    if args.load_model:
-        nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
+    if p_args.cmd == "self":
+        from CoachTetris import SelfPlay
+        worker = SelfPlay(g, nnet, args)
+    elif p_args.cmd == 'opt':
+        from CoachTetris import Trainer
 
-    c = Coach(g, nnet, args)
-    if args.load_examples:
-        print("Load trainExamples from file")
-        c.loadTrainExamples(examplesFile=args.examples_file, skipFirstSelfPlay=True)
-    c.learn()
+        if args.load_model:
+            nnet.load_checkpoint(args.checkpoint, args.load_folder_file[1])
+
+        worker = Trainer(g, nnet, args)
+    elif p_args.cmd == 'eval':
+        from CoachTetris import Evaluator
+        worker = Evaluator(g, nnet, args)
+    else:
+        raise ValueError("Command '%s' does not exist! Available commands: %s"%(p_args.cmd, CMD_LIST))
+
+    worker.run()
+
+    # c = Coach(g, nnet, args)
+    # if args.load_examples:
+    #     print("Load trainExamples from file")
+    #     c.loadTrainExamples(examplesFile=args.examples_file, skipFirstSelfPlay=True)
+    # c.learn()
