@@ -5,6 +5,7 @@ from random import shuffle
 from collections import deque
 import time
 import glob
+import logging
 
 from pytorch_classification.utils import Bar, AverageMeter
 
@@ -138,12 +139,40 @@ class Evaluator():
 
         self.nnet = nnet
 
+        self.log = None
+
+        self._create_logger()
+
+    def _create_logger(self):
+        # create logger with 'spam_application'
+        log = logging.getLogger('evaluator')
+        log.setLevel(logging.DEBUG)
+
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s')
+
+        # create file handler which logs even debug messages
+        fh = logging.FileHandler('evaluator.log')
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(formatter)
+        log.addHandler(fh)
+
+        # create console handler with a higher log level
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        ch.setFormatter(formatter)
+        log.addHandler(ch)
+
+        self.log = log
+
     def load_latest_checkpoint(self, folder):
         latest_ckpt = get_latest_checkpoint_file(folder)
         if latest_ckpt:
             self.nnet.load_checkpoint(folder, latest_ckpt)
+            self.log.info("Loaded checkpoint %s/%s"%(folder, latest_ckpt))
         else:
             print("Did not find any checkpoint files in %s"%(folder))
+        return latest_ckpt
 
     def run(self):
         folder = self.args.checkpoint
@@ -174,15 +203,15 @@ class Evaluator():
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
 
-            print('NEW/BEST WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
+            self.log.info('NEW/BEST WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
             if pwins+nwins > 0 and float(nwins)/(pwins+nwins) < update_threshold:
-                print('FAILED TO BEAT BEST MODEL ABOVE THRESHOLD OF %.3f'%(update_threshold))
+                self.log.info('FAILED TO BEAT BEST MODEL ABOVE THRESHOLD OF %.3f'%(update_threshold))
                 # self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             else:
-                print('SAVING TO BEST MODEL...')
+                self.log.info('SAVING TO BEST MODEL...')
                 self.nnet.save_checkpoint(folder=folder, filename=best_model_file)           
                 best_net.load_checkpoint(folder=folder, filename=best_model_file)
-                print("Best net updated")
+                self.log.info("Best net updated")
 
 class Trainer():
     def __init__(self, game, nnet, args):
@@ -197,6 +226,17 @@ class Trainer():
         self.folder = self. args.checkpoint
 
         self.cur_data_files = []
+
+    def load_best_checkpoint(self, folder):
+        best_model_file = 'best.pth.tar'
+        if not os.path.exists(os.path.join(folder, best_model_file)):
+            latest_ckpt = get_latest_checkpoint_file(folder)
+            if latest_ckpt:
+                self.nnet.load_checkpoint(folder, latest_ckpt)
+            else:
+                print("Did not find any checkpoint files in %s"%(folder))
+        else:
+            self.nnet.load_checkpoint(folder, best_model_file)
 
     def load_latest_data(self, folder):
 
@@ -214,12 +254,15 @@ class Trainer():
                 self.trainExamplesHistory.extendleft(data)
                 if len(self.trainExamplesHistory) == max_examples:
                     break
-            except EOFError, e:
-                print("EOF error on file %s, skipping"%(f))
+            except Exception, e:
+                print("Error on file %s, skipping"%(f))
                 new_data_files_copy.remove(f)
-            except ValueError, e:
-                print("Value error on file %s, skipping"%(f))
-                new_data_files_copy.remove(f)
+            # except ValueError, e:
+            #     print("Value error on file %s, skipping"%(f))
+            #     new_data_files_copy.remove(f)
+            # except ValueError, e:
+            #     print("Value error on file %s, skipping"%(f))
+            #     new_data_files_copy.remove(f)
 
         self.cur_data_files.extend(new_data_files_copy)
         return len(new_data_files_copy) > 0  # has new data file(s)
@@ -238,7 +281,10 @@ class Trainer():
 
         min_examples = self.args.minlenOfQueue # maxEpisodesInTrainHistory
 
+        best_model_file = 'best.pth.tar'
+
         iter_ = 0
+        lr = self.args.train.lr
         while True:
 
             has_new_data = self.load_latest_data(folder)
@@ -247,6 +293,8 @@ class Trainer():
                 print("No new data found in '%s' folder, sleeping for %d seconds"%(folder, sleep_secs))
                 time.sleep(sleep_secs)
                 continue
+
+            self.load_best_checkpoint(folder)
 
             iter_ += 1
             print("TRAIN ITER %d"%(iter_))
@@ -263,7 +311,7 @@ class Trainer():
                 print("Total available examples %d < batch size of %d, skipping training/pitting.."%(total_examples, batch_sz))
                 continue
             
-            self.nnet.train(self.trainExamplesHistory)
+            self.nnet.train(self.trainExamplesHistory, lr=lr)
 
             # save 
             self.nnet.save_checkpoint(folder=folder, filename='checkpoint_%d.pth.tar'%(time.time()*10))

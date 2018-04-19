@@ -11,3 +11,5 @@ pretrained_models/
 output/
 models
 model/
+
+*.log

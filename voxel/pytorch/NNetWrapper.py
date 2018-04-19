@@ -34,12 +34,12 @@ class NNetWrapper(NeuralNet):
         if args.cuda:
             self.nnet.cuda()
 
-    def train(self, examples):
+    def train(self, examples, lr=0.001):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
         args = self.args
-        optimizer = optim.Adam(self.nnet.parameters())
+        optimizer = optim.Adam(self.nnet.parameters(), lr=lr)
 
         for epoch in range(args.epochs):
             print('EPOCH ::: ' + str(epoch+1))
@@ -141,6 +141,8 @@ class NNetWrapper(NeuralNet):
         torch.save({
             'state_dict' : self.nnet.state_dict(),
         }, filepath)
+        print("Saved to %s"%(filepath))
+
 
     def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         # https://github.com/pytorch/examples/blob/master/imagenet/main.py#L98
