@@ -35,12 +35,16 @@ class SelfPlay():
 
         self.data = []
 
-    def load_latest_checkpoint(self, folder):
-        latest_ckpt = get_latest_checkpoint_file(folder)
-        if latest_ckpt:
-            self.nnet.load_checkpoint(folder, latest_ckpt)
+    def load_best_checkpoint(self, folder):
+        best_model_file = 'best.pth.tar'
+        if not os.path.exists(os.path.join(folder, best_model_file)):
+            latest_ckpt = get_latest_checkpoint_file(folder)
+            if latest_ckpt:
+                self.nnet.load_checkpoint(folder, latest_ckpt)
+            else:
+                print("Did not find any checkpoint files in %s"%(folder))
         else:
-            print("Did not find any checkpoint files in %s"%(folder))
+            self.nnet.load_checkpoint(folder, best_model_file)
 
     def run(self):
         folder = self.args.checkpoint
@@ -49,7 +53,7 @@ class SelfPlay():
 
         while True:
 
-            self.load_latest_checkpoint(folder)
+            self.load_best_checkpoint(folder)
 
             eps_time = AverageMeter()
             bar = Bar('Self Play', max=self.args.numEps)
