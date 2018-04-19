@@ -12,7 +12,7 @@ from ArenaTetris import Arena
 from MCTSTetris import MCTS
 
 def get_latest_checkpoint_file(folder):
-    ckpt_files = glob.glob(os.path.join(folder, "*.pth.tar"))
+    ckpt_files = glob.glob(os.path.join(folder, "check*.pth.tar"))
     if len(ckpt_files) == 0:
         return None
     latest_ckpt_file = max(ckpt_files, key=os.path.getctime)
@@ -152,7 +152,7 @@ class Evaluator():
 
         while True:
             if not os.path.exists(os.path.join(folder, best_model_file)):
-                sleep_secs = 60
+                sleep_secs = 30
                 print("No best model '%s' found in '%s' folder, sleeping for %d seconds"%(best_model_file, folder, sleep_secs))
                 time.sleep(sleep_secs)
             else:
@@ -200,16 +200,25 @@ class Trainer():
 
         data_files = get_latest_data_files(folder)
 
-        new_data_files = np.setdiff1d(data_files, self.cur_data_files)
+        new_data_files = list(np.setdiff1d(data_files, self.cur_data_files))
+        new_data_files = sorted(new_data_files, key=os.path.getctime, reverse=True)
+        new_data_files_copy = list(new_data_files)
         for f in new_data_files:
-            data = self._load_data_file(f)
+            try:
+                data = self._load_data_file(f)
 
-            self.trainExamplesHistory.extendleft(data)
-            if len(self.trainExamplesHistory) == max_examples:
-                break
+                self.trainExamplesHistory.extendleft(data)
+                if len(self.trainExamplesHistory) == max_examples:
+                    break
+            except EOFError, e:
+                print("EOF error on file %s, skipping"%(f))
+                new_data_files_copy.remove(f)
+            except ValueError, e:
+                print("Value error on file %s, skipping"%(f))
+                new_data_files_copy.remove(f)
 
-        self.cur_data_files = data_files
-        return len(new_data_files) > 0  # has new data file(s)
+        self.cur_data_files.extend(new_data_files_copy)
+        return len(new_data_files_copy) > 0  # has new data file(s)
 
     def _load_data_file(self, file):
         print("Reading %s..."%(file))
@@ -230,7 +239,7 @@ class Trainer():
 
             has_new_data = self.load_latest_data(folder)
             if not has_new_data:
-                sleep_secs = 60
+                sleep_secs = 30
                 print("No new data found in '%s' folder, sleeping for %d seconds"%(folder, sleep_secs))
                 time.sleep(sleep_secs)
                 continue
