@@ -1,9 +1,42 @@
 import numpy as np
 import random 
 
+
+class BoxListGenerator(object):
+    def __init__(self, min_x=1, max_x=1, min_y=1, max_y=1, min_z=1, max_z=1):
+        assert max_x >= min_x > 0 and max_y >= min_y > 0 and max_z >= min_z > 0
+
+        self.min_x = min_x
+        self.min_y = min_y
+        self.min_z = min_z
+        self.max_x = max_x
+        self.max_y = max_y
+        self.max_z = max_z
+
+    def generate(self, n, max_cells=None, sort=True):
+        boxes = []
+        acc_cells = 0
+        while len(boxes) < n:
+            if max_cells is not None and acc_cells >= max_cells:
+                break
+            w = random.randint(self.min_x, self.max_x)
+            h = random.randint(self.min_y, self.max_y)
+            d = random.randint(self.min_z, self.max_z) # depth (z)
+            acc_cells += w * h * d
+            boxes.append((w,h,d))
+
+        if sort:
+            boxes = self.sort_box_list(boxes)
+        return boxes
+
+    def sort_box_list(self, box_list):
+        str_boxes = sorted(["%d_%d_%d"%(i[0],i[1],i[2]) for i in box_list])
+        sorted_boxes = [np.array(b.split("_")).astype(np.int32) for b in str_boxes]
+        return sorted_boxes
+
 class Board(object):
 
-    def __init__(self, x, y, z, n):
+    def __init__(self, x, y, z, n, box_list_gen=None):
         "Set up initial board configuration."
 
         self.x = x 
@@ -25,13 +58,18 @@ class Board(object):
         self.total_cells = self.len_x * self.len_y * self.len_z
         self.total_actions = self.x * self.y * self.z * self.n
 
+        self.box_list_generator = BoxListGenerator(min_x=1, max_x=int(self.len_x/2) + 1, min_y=1, max_y=int(self.y/2)+1, min_z=1, max_z=2)
+        if box_list_gen is not None:
+            assert type(box_list_gen) == BoxListGenerator
+            self.box_list_generator = box_list_gen
+
         self.pieces = None
 
         self.reset()
 
     def reset(self):
         self.pieces = np.zeros((self.len_z,self.len_y,self.len_x), dtype=np.int8)
-        box_list = self.generate_boxes(min_x=1, max_x=int(self.len_x/2) + 1, min_y=1, max_y=int(self.y/2)+1, min_z=1, max_z=2)
+        box_list = self.generate_boxes()
         self._fill_pieces_with_box_list(box_list)
         self.box_list_area = self.calculate_box_list_area()
 
@@ -55,23 +93,10 @@ class Board(object):
         box_list_area = sum([cache[i] * cache[i+1] * cache[i+2] for i in xrange(0,len(cache),3)])
         return int(box_list_area)
 
-    def generate_boxes(self, min_x=1, max_x=4, min_y=1, max_y=2, min_z=1, max_z=2):
-        boxes = []
-        total_cells = self.x * self.y * self.z
-        acc_cells = 0
-        while acc_cells < total_cells and len(boxes) < self.n:
-            w = random.randint(min_x, max_x)
-            h = random.randint(min_y, max_y)
-            d = random.randint(min_z, max_z) # depth (z)
-            acc_cells += w * h * d
-            boxes.append((w,h,d))
-
-        # then sort by str
-        str_boxes = sorted(["%d_%d_%d"%(i[0],i[1],i[2]) for i in boxes])
-        sorted_boxes = [np.array(b.split("_")).astype(np.int32) for b in str_boxes]
+    def generate_boxes(self):
+        sorted_boxes = self.box_list_generator.generate(n=self.n, max_cells=self.x * self.y * self.z, sort=True)
 
         # print(sorted_boxes)
-        # print(acc_cells)
         # print(len(sorted_boxes))
         return sorted_boxes
 
